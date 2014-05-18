@@ -2,19 +2,75 @@
 
 
 ## Loading and preprocessing the data
-
+```{r echo=TRUE}
+rawdata<-read.csv("activity.csv", na.strings="NA")
+```
 
 
 ## What is mean total number of steps taken per day?
 
+```{r echo=TRUE}
+stepsbyday<-aggregate(rawdata$steps, by=list(date = rawdata$date), FUN="sum")
+plot(strptime(stepsbyday$date, "%Y-%m-%d"), stepsbyday$x, type="hist", xlab="Date", ylab = "Number of Steps")
+title("Total number of steps by day")
+meanbyday <- mean(stepsbyday$x, na.rm=TRUE)
+medianbyday<-median(stepsbyday$x, na.rm = TRUE)
 
+```
+
+Mean steps count per day: `r meanbyday`  
+Median steps count per day: `r medianbyday`
 
 ## What is the average daily activity pattern?
 
+
+```{r echo=TRUE}
+fdata<-subset(rawdata, !is.na(steps), select=c(steps, date, interval))
+stepsbyinterval<-aggregate(fdata$steps, by=list(interval = fdata$interval), FUN="mean")
+plot(stepsbyinterval$interval, stepsbyinterval$x, type="l", xlab="interval", ylab = "Number of Steps")
+title("Average number of steps by 5-minutes interval")
+maxinteravl<-stepsbyinterval$interval[max(stepsbyinterval$x)==stepsbyinterval$x]
+```
+
+Interval with maximum number of steps: `r maxinteravl`
+
+```{r echo=TRUE}
+nadata<-subset(rawdata, is.na(steps), select=c(steps, date, interval))
+misval <- dim(nadata)[1]
+maxinteravl<-stepsbyinterval$interval[max(stepsbyinterval$x)==stepsbyinterval$x]
+```
 
 
 ## Imputing missing values
 
 
 
+```{r echo=TRUE}
+nadata<-subset(rawdata, is.na(steps), select=c(date, interval))
+misval <- dim(nadata)[1]
+```
+
+Number of missing values is `r misval`
+
+Now we replcaing missing values by mean of 5-minute intervals calculated withowt missing data
+
+```{r echo=TRUE}
+tmp<-merge(stepsbyinterval, nadata, by="interval")
+updata<-data.frame(steps=tmp$x, date = tmp$date, interval = tmp$interval)
+newdata<-rbind(updata, fdata)
+newstepsbyday<-aggregate(newdata$steps, by=list(date = newdata$date), FUN="sum")
+plot(strptime(newstepsbyday$date, "%Y-%m-%d"), newstepsbyday$x, type="hist", xlab="Date", ylab = "Number of Steps")
+title("Total number of steps by day with recovered missing data")
+newmeanbyday <- mean(newstepsbyday$x)
+newmedianbyday<-median(newstepsbyday$x)
+```
+
+Mean steps count per day after recover missing values: `r newmeanbyday` (difference is `r newmeanbyday-meanbyday`)  
+Median steps count per day after recover missing values: `r newmedianbyday` (difference is `r newmedianbyday-medianbyday`)
+
+
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r echo=TRUE}
+wdata<-data.frame(steps=newdata$steps, date=newdata$date, interval=newdata$interval,weekend=if (as.POSIXlt(strptime(newdata$date, "%Y-%m-%d"))$wday == 0) factor("weekend", levels=c("weekend", "weekday")) else factor("weekday", levels=c("weekend", "weekday")))
+
