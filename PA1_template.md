@@ -117,13 +117,17 @@ Median steps count per day after recover missing values: 1.0766 &times; 10<sup>4
 
 
 ```r
+wd0 <- as.POSIXlt(strptime(newdata$date, "%Y-%m-%d"))$wday == 0
+wd6 <- as.POSIXlt(strptime(newdata$date, "%Y-%m-%d"))$wday == 6
+fwd <- as.factor(wd0 | wd6)
+levels(fwd) = c("weekday", "weekend")
 wdata <- data.frame(steps = newdata$steps, date = newdata$date, interval = newdata$interval, 
-    weekend = if (as.POSIXlt(strptime(newdata$date, "%Y-%m-%d"))$wday == 0) factor("weekend", 
-        levels = c("weekend", "weekday")) else factor("weekday", levels = c("weekend", 
-        "weekday")))
+    weekend = fwd)
+stepsbyintervalwd <- aggregate(wdata$steps, by = list(interval = wdata$interval, 
+    weekend = wdata$weekend), FUN = "mean")
+library(lattice)
+xyplot(stepsbyintervalwd$x ~ stepsbyintervalwd$interval | stepsbyintervalwd$weekend, 
+    type = "l", xlab = "interval", layout = c(1, 2))
 ```
 
-```
-## Warning: the condition has length > 1 and only the first element will be
-## used
-```
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 

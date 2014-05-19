@@ -72,5 +72,12 @@ Median steps count per day after recover missing values: `r newmedianbyday` (dif
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```{r echo=TRUE}
-wdata<-data.frame(steps=newdata$steps, date=newdata$date, interval=newdata$interval,weekend=if (as.POSIXlt(strptime(newdata$date, "%Y-%m-%d"))$wday == 0) factor("weekend", levels=c("weekend", "weekday")) else factor("weekday", levels=c("weekend", "weekday")))
+wd0<-as.POSIXlt(strptime(newdata$date, "%Y-%m-%d"))$wday == 0
+wd6<-as.POSIXlt(strptime(newdata$date, "%Y-%m-%d"))$wday == 6
+fwd<-as.factor(wd0|wd6)
+levels(fwd) = c("weekday", "weekend")
+wdata<-data.frame(steps=newdata$steps, date=newdata$date, interval=newdata$interval,weekend=fwd)
+stepsbyintervalwd<-aggregate(wdata$steps, by=list(interval = wdata$interval, weekend = wdata$weekend), FUN="mean")
+library(lattice)
+xyplot(stepsbyintervalwd$x~stepsbyintervalwd$interval|stepsbyintervalwd$weekend, type='l', xlab = "interval", layout = c(1,2))
 
